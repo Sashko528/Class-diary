@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Щоденник класу</title>
+<style>
+  :root{--bg:#f6f7f9;--card:#fff;--border:#e5e7eb;--muted:#6b7280;--ink:#111}
+  body{margin:0;font-family:sans-serif;background:var(--bg);color:var(--ink)}
+  header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--border);z-index:10}
+  .wrap{max-width:900px;margin:0 auto;padding:12px 16px}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  h1{font-size:18px;margin:0}
+  .muted{color:var(--muted);font-size:13px}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+  .grid{display:grid;gap:16px}
+  button,input,textarea{font:inherit}
+  button{border:1px solid var(--ink);background:var(--ink);color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer}
+  button.ghost{background:#fff;color:var(--ink);border:1px solid var(--border)}
+  input,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #d1d5db}
+  textarea{min-height:100px}
+  .entry{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px}
+  .entry h3{margin:0 0 6px;font-size:18px}
+  .entry .meta{color:var(--muted);font-size:12px;margin-bottom:8px}
+  #editor{display:none}
+  .foot{text-align:center;color:#9ca3af;font-size:12px;padding:20px 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap bar">
+    <div>
+      <h1>Щоденник класу</h1>
+      <div class="muted">Читати можуть усі. Редагувати — лише власник.</div>
+    </div>
+    <div>
+      <span id="userBadge" class="muted">Гість</span>
+      <button id="ownerBtn" class="ghost">Власник</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap grid" style="margin-top:16px;">
+  <!-- Редактор -->
+  <section id="editor" class="panel">
+    <h2>Новий запис</h2>
+    <input id="title" type="text" placeholder="Заголовок">
+    <input id="tagline" type="text" placeholder="Короткий підзаголовок (необов’язково)">
+    <textarea id="content" placeholder="Текст запису..."></textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+      <button id="publishBtn">Опублікувати</button>
+      <button id="clearBtn" class="ghost">Очистити</button>
+      <button id="reloadBtn" class="ghost">Оновити список</button>
+    </div>
+    <p class="muted">Для збереження скрипт попросить твій GitHub token (використовується тільки для цього запиту).</p>
+  </section>
+
+  <!-- Список записів -->
+  <section id="list" class="grid"></section>
+
+  <div class="foot">© <span id="year"></span> Щоденник</div>
+</main>
+
+<!-- Діалог входу власника -->
+<dialog id="ownerDialog" class="panel">
+  <form id="ownerForm" method="dialog">
+    <h3>Вхід власника</h3>
+    <p class="muted">Введи пароль, щоб розблокувати редактор.</p>
+    <input id="ownerPassword" type="password" placeholder="Пароль власника" required>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button id="ownerLoginBtn">Розблокувати</button>
+      <button formmethod="dialog" class="ghost">Скасувати</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+/* ===== CONFIG: заміни owner/repo на свої ===== */
+const CONFIG = {
+  owner:  "твій_логін",     // 👉 тут підстав свій GitHub логін
+  repo:   "Class-diary",    // 👉 назва твого репозиторію
+  branch: "main",
+  path:   "entries.json"
+};
+/* ============================================ */
+
+const OWNER_PASSWORD_SHA256 = "40770c61fe1513d3a427820c144ca0fbc0a3efce4810d60c44da24d4be40f61a"; // для "08058673sl"
+const userBadge = document.getElementById('userBadge');
+const editor = document.getElementById('editor');
+const ownerBtn = document.getElementById('ownerBtn');
+const ownerDialog = document.getElementById('ownerDialog');
+const ownerPasswordEl = document.getElementById('ownerPassword');
+const ownerLoginBtn = document.getElementById('ownerLoginBtn');
+const titleEl = document.getElementById('title');
+const taglineEl = document.getElementById('tagline');
+const contentEl = document.getElementById('content');
+const publishBtn = document.getElementById('publishBtn');
+const clearBtn = document.getElementById('clearBtn');
+const reloadBtn = document.getElementById('reloadBtn');
+const listEl = document.getElementById('list');
+document.getElementById('year').textContent = new Date().getFullYear();
+
+let ownerUnlocked = false;
+
+ownerBtn.addEventListener('click', () => { ownerDialog.showModal(); ownerPasswordEl.value=''; });
+ownerLoginBtn.addEventListener('click', async (e) => {
+  e.preventDefault();
+  const ok = await verifyPassword(ownerPasswordEl.value);
+  if (!ok) { alert('Невірний пароль'); return; }
+  ownerUnlocked = true;
+  ownerDialog.close();
+  updateOwnerUI();
+});
+function updateOwnerUI(){
+  editor.style.display = ownerUnlocked ? 'block' : 'none';
+  userBadge.textContent = ownerUnlocked ? 'Власник' : 'Гість';
+}
+function escapeHtml(s){ return (s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+function bytesToHex(b){ return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('') }
+async function verifyPassword(plain){
+  const enc = new TextEncoder().encode(plain);
+  const hash = await crypto.subtle.digest('SHA-256', enc);
+  return bytesToHex(hash) === OWNER_PASSWORD_SHA256;
+}
+const b64encode = (bytes) => btoa(String.fromCharCode(...bytes));
+const b64decodeToBytes = (str) => Uint8Array.from(atob(str), c => c.charCodeAt(0));
+
+async function githubGetContents() {
+  const {owner,repo,path,branch} = CONFIG;
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+  const res = await fetch(url, { headers: { 'Accept':'application/vnd.github+json' }});
+  if (res.status === 404) return { entries: [], sha: null };
+  const data = await res.json();
+  const contentBytes = b64decodeToBytes(data.content.replace(/\n/g,''));
+  const text = new TextDecoder().decode(contentBytes);
+  let entries = [];
+  try { entries = JSON.parse(text); } catch { entries = []; }
+  return { entries, sha: data.sha };
+}
+
+async function githubPutContents(entries, prevSha, token, message) {
+  const {owner,repo,path,branch} = CONFIG;
+  const bodyStr = JSON.stringify(entries, null, 2);
+  const bodyB64 = b64encode(new TextEncoder().encode(bodyStr));
+  const payload = { message: message||'Update diary', content: bodyB64, branch, ...(prevSha?{sha:prevSha}:{}) };
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const res = await fetch(url, {
+    method:'PUT',
+    headers:{
+      'Accept':'application/vnd.github+json',
+      'Authorization':`Bearer ${token}`,
+      'Content-Type':'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('Помилка запису GitHub: '+res.status);
+  return res.json();
+}
+
+async function refreshList(){
+  listEl.innerHTML='';
+  try{
+    const {entries} = await githubGetContents();
+    if (!entries.length){ listEl.innerHTML='<div class="panel">Поки що немає записів.</div>'; return; }
+    for (const e of entries){
+      const d=document.createElement('article');d.className='entry';
+      const when = e.createdAt? new Date(e.createdAt).toLocaleString():'';
+      d.innerHTML=`<h3>${escapeHtml(e.title)}</h3><div class="meta">${when}${e.tagline?' · '+escapeHtml(e.tagline):''}</div><div>${escapeHtml(e.text).replace(/\n/g,'<br>')}</div>`;
+      listEl.appendChild(d);
+    }
+  }catch(err){ listEl.innerHTML='<div class="panel">Помилка: '+err.message+'</div>'; }
+}
+
+publishBtn.addEventListener('click', async ()=>{
+  if(!ownerUnlocked){ alert('Розблокуй власника'); return; }
+  const title=titleEl.value.trim(), text=contentEl.value.trim(), tag=taglineEl.value.trim();
+  if(!title||!text){ alert('Заповни заголовок і текст'); return; }
+  const token=prompt('Введи свій GitHub token:'); if(!token) return;
+  publishBtn.disabled=true;
+  try{
+    const {entries,sha}=await githubGetContents();
+    const newEntry={id:crypto.randomUUID(),title,text,tagline:tag||null,createdAt:new Date().toISOString()};
+    const updated=[newEntry,...entries];
+    await githubPutContents(updated,sha,token,`Add entry: ${title.slice(0,50)}`);
+    titleEl.value=''; taglineEl.value=''; contentEl.value='';
+    await refreshList();
+    alert('Збережено ✅');
+  }catch(e){ alert(e.message); }finally{ publishBtn.disabled=false; }
+});
+clearBtn.addEventListener('click',()=>{titleEl.value='';taglineEl.value='';contentEl.value='';});
+reloadBtn.addEventListener('click',refreshList);
+
+refreshList();
+</script>
+</body>
+</html>
