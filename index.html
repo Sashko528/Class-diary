@@ -5,81 +5,59 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Класний щоденник</title>
 
-<!-- (необов'язково) рукописний шрифт — можна прибрати цей рядок -->
-<link href="https://fonts.googleapis.com/css2?family=Schoolbell&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
 
 <style>
-  :root{
-    --bg:#eaeef3;         /* фон злегка сірий */
-    --paper:#fffdf7;      /* колір паперу */
-    --rule:#cfe6ff;       /* лінії */
-    --margin:#ff7a7a;     /* червона вертикальна лінія */
-    --ink:#111;
-    --muted:#6b7280;
-    --border:#e5e7eb;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
   body{
-    margin:0; background:var(--bg); color:var(--ink);
+    margin:0;
     font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background: linear-gradient(135deg,#dbeafe,#fdf2f8); /* сучасний фон */
+    min-height:100vh;
   }
   header{
-    position:sticky; top:0; z-index:10;
-    background:#fff; border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:10;
+    background:#ffffffd9; backdrop-filter: blur(6px);
+    border-bottom:1px solid #e5e7eb;
   }
   .wrap{max-width:900px;margin:0 auto;padding:12px 16px}
   .bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
   h1{margin:0;font-size:20px}
-  .muted{color:var(--muted);font-size:13px}
-  button,input,textarea{font:inherit}
-  button{cursor:pointer;border-radius:10px;padding:8px 12px}
+  .muted{color:#6b7280;font-size:13px}
+  button{cursor:pointer;border-radius:8px;padding:6px 12px;font:inherit}
   button.primary{background:#111;color:#fff;border:1px solid #111}
-  button.ghost{background:#fff;color:#111;border:1px solid var(--border)}
-  input,textarea{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:10px;background:#fff}
+  button.ghost{background:#fff;color:#111;border:1px solid #d1d5db}
+  input,textarea,select{width:100%;padding:8px;border-radius:8px;border:1px solid #d1d5db;font:inherit}
+  textarea{min-height:100px}
+  .panel{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+  .grid{display:grid;gap:10px}
 
-  /* ===== СТОРІНКА ЩОДЕННИКА ===== */
+  /* сторінка-щоденник */
   .page{
     position:relative;
     background:
-      repeating-linear-gradient(180deg, var(--rule) 0 1px, transparent 1px 32px),
-      linear-gradient(0deg, var(--paper), var(--paper));
-    border-radius:14px;
-    box-shadow: 0 10px 25px rgba(0,0,0,.06);
-    border:1px solid #e9e5d8;
-    padding:24px 24px 24px 56px; /* більше зліва під поле */
+      repeating-linear-gradient(180deg, #cfe6ff 0 1px, transparent 1px 28px),
+      linear-gradient(0deg,#fffdf7,#fffdf7);
+    border-radius:12px;
+    box-shadow:0 8px 20px rgba(0,0,0,.1);
+    padding:24px 24px 24px 56px;
+    margin-bottom:16px;
   }
-  .page::before{ /* червоне поле */
-    content:""; position:absolute; top:0; bottom:0; left:40px; width:2px; background:var(--margin); opacity:.6;
-    border-radius:2px;
+  .page::before{
+    content:""; position:absolute; top:0; bottom:0; left:40px; width:2px;
+    background:rgba(255,0,0,.3);
   }
-  .page-head{
-    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-    margin-bottom:8px; font-size:14px; color:#374151;
+  .day{
+    font-family:"Patrick Hand",cursive;
+    font-size:24px;
+    margin-bottom:12px;
   }
-  .page-title{
-    font-family: "Schoolbell", system-ui, sans-serif;
-    font-size:22px; line-height:1.2; margin:0 0 6px;
-  }
-  .page-meta{ color:#6b7280; font-size:12px; margin-bottom:8px; }
-  .page-text{
+  .lesson{
+    font-family:"Patrick Hand",cursive;
+    font-size:18px;
+    line-height:1.8;
     white-space:pre-wrap;
-    line-height:2;          /* під лінійку */
-    padding-left:4px;
   }
-  .page-num{
-    text-align:right; color:#9aa3af; font-size:12px; margin-top:8px;
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* ===== ЕДИТОР (як заповнення щоденника) ===== */
-  #editor .grid{display:grid; gap:10px}
-  #editor textarea{min-height:150px; line-height:1.8}
-  #editor{display:none}
-  .panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px}
-  .grid-list{display:grid; gap:16px}
-
-  .foot{text-align:center;color:#9ca3af;font-size:12px;padding:24px 0}
+  .page-num{text-align:right;color:#9ca3af;font-size:12px;margin-top:8px}
 </style>
 </head>
 <body>
@@ -87,9 +65,9 @@
   <div class="wrap bar">
     <div>
       <h1>Класний щоденник</h1>
-      <div class="muted">Читати можуть усі. Записи змінює лише власник.</div>
+      <div class="muted">Читати можуть усі. Редагувати — власник.</div>
     </div>
-    <div class="bar" style="gap:8px;">
+    <div>
       <span id="userBadge" class="muted">Гість</span>
       <button id="ownerBtn" class="ghost">Власник</button>
     </div>
@@ -97,35 +75,40 @@
 </header>
 
 <main class="wrap" style="margin-top:16px;">
-  <!-- ЕДИТОР -->
-  <section id="editor" class="panel">
-    <h2 style="margin:0 0 8px;">Новий запис</h2>
+  <!-- редактор -->
+  <section id="editor" class="panel" style="display:none;">
+    <h2>Новий запис</h2>
     <div class="grid">
-      <input id="title" type="text" placeholder="Тема уроку / події">
-      <input id="tagline" type="text" placeholder="Коротка примітка (необов’язково)">
-      <textarea id="content" placeholder="Запиши, що сталося, домашнє завдання, враження..."></textarea>
+      <select id="day">
+        <option>Понеділок</option>
+        <option>Вівторок</option>
+        <option>Середа</option>
+        <option>Четвер</option>
+        <option>Пʼятниця</option>
+        <option>Субота</option>
+      </select>
+      <input id="title" type="text" placeholder="Назва уроку">
+      <input id="lessonNum" type="number" min="1" max="8" placeholder="Номер уроку (1-8)">
+      <textarea id="content" placeholder="Нотатки..."></textarea>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button id="publishBtn" class="primary">Записати у щоденник</button>
+        <button id="publishBtn" class="primary">Записати</button>
         <button id="clearBtn" class="ghost">Очистити</button>
-        <button id="reloadBtn" class="ghost">Оновити сторінки</button>
+        <button id="reloadBtn" class="ghost">Оновити список</button>
       </div>
-      <p class="muted">Під час збереження знадобиться GitHub token — він використовується лише для цього коміту.</p>
     </div>
   </section>
 
-  <!-- СПИСОК СТОРІНОК -->
-  <section id="list" class="grid-list"></section>
-
-  <div class="foot">© <span id="year"></span> Щоденник</div>
+  <!-- список -->
+  <section id="list"></section>
 </main>
 
-<!-- ДІАЛОГ ПАРОЛЯ ВЛАСНИКА -->
+<!-- діалог пароля -->
 <dialog id="ownerDialog" class="panel">
   <form id="ownerForm" method="dialog">
-    <h3 style="margin:0 0 8px;">Вхід власника</h3>
+    <h3>Вхід власника</h3>
     <p class="muted">Введи пароль, щоб розблокувати редактор.</p>
-    <input id="ownerPassword" type="password" placeholder="Пароль власника" required>
-    <div style="display:flex;gap:8px;margin-top:12px;">
+    <input id="ownerPassword" type="password" required>
+    <div style="margin-top:12px;display:flex;gap:8px;">
       <button id="ownerLoginBtn" class="primary">Розблокувати</button>
       <button formmethod="dialog" class="ghost">Скасувати</button>
     </div>
@@ -133,171 +116,125 @@
 </dialog>
 
 <script>
-/* ===== CONFIG: підстав свій логін/репозиторій ===== */
-const CONFIG = {
-  owner:  "Sashko528",       // ← твій GitHub-логін
-  repo:   "Class-diary",     // ← назва репозиторію
-  branch: "main",
-  path:   "entries.json"
-};
-/* ================================================ */
+/* CONFIG */
+const CONFIG={owner:"Sashko528",repo:"Class-diary",branch:"main",path:"entries.json"};
+const OWNER_PASSWORD_SHA256="40770c61fe1513d3a427820c144ca0fbc0a3efce4810d60c44da24d4be40f61a"; // "08058673sl"
 
-const OWNER_PASSWORD_SHA256 = "40770c61fe1513d3a427820c144ca0fbc0a3efce4810d60c44da24d4be40f61a"; // "08058673sl"
-const userBadge = document.getElementById('userBadge');
-const editor = document.getElementById('editor');
-const ownerBtn = document.getElementById('ownerBtn');
-const ownerDialog = document.getElementById('ownerDialog');
-const ownerPasswordEl = document.getElementById('ownerPassword');
-const ownerLoginBtn = document.getElementById('ownerLoginBtn');
+const userBadge=document.getElementById('userBadge');
+const editor=document.getElementById('editor');
+const ownerBtn=document.getElementById('ownerBtn');
+const ownerDialog=document.getElementById('ownerDialog');
+const ownerPasswordEl=document.getElementById('ownerPassword');
+const ownerLoginBtn=document.getElementById('ownerLoginBtn');
 
-const titleEl = document.getElementById('title');
-const taglineEl = document.getElementById('tagline');
-const contentEl = document.getElementById('content');
-const publishBtn = document.getElementById('publishBtn');
-const clearBtn = document.getElementById('clearBtn');
-const reloadBtn = document.getElementById('reloadBtn');
-const listEl = document.getElementById('list');
-document.getElementById('year').textContent = new Date().getFullYear();
+const dayEl=document.getElementById('day');
+const titleEl=document.getElementById('title');
+const lessonNumEl=document.getElementById('lessonNum');
+const contentEl=document.getElementById('content');
+const publishBtn=document.getElementById('publishBtn');
+const clearBtn=document.getElementById('clearBtn');
+const reloadBtn=document.getElementById('reloadBtn');
+const listEl=document.getElementById('list');
 
-let ownerUnlocked = false;
+let ownerUnlocked=false;
 
-/* ===== Вхід власника ===== */
-ownerBtn.addEventListener('click', () => { ownerDialog.showModal(); ownerPasswordEl.value=''; });
-ownerLoginBtn.addEventListener('click', async (e) => {
+/* вхід */
+ownerBtn.addEventListener('click',()=>{ownerDialog.showModal();ownerPasswordEl.value='';});
+ownerLoginBtn.addEventListener('click',async e=>{
   e.preventDefault();
-  const ok = await verifyPassword(ownerPasswordEl.value);
-  if (!ok) { alert('Невірний пароль'); return; }
-  ownerUnlocked = true;
-  ownerDialog.close();
-  updateOwnerUI();
+  const ok=await verifyPassword(ownerPasswordEl.value);
+  if(!ok){alert('Невірний пароль');return;}
+  ownerUnlocked=true;ownerDialog.close();editor.style.display='block';userBadge.textContent='Власник';
 });
-function updateOwnerUI(){
-  editor.style.display = ownerUnlocked ? 'block' : 'none';
-  userBadge.textContent = ownerUnlocked ? 'Власник' : 'Гість';
-}
 
-/* ===== Утиліти ===== */
-function escapeHtml(s){ return (s??'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
-function bytesToHex(b){ return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('') }
+/* утиліти */
+function escapeHtml(s){return(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+function bytesToHex(b){return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 async function verifyPassword(plain){
-  const enc = new TextEncoder().encode(plain);
-  const hash = await crypto.subtle.digest('SHA-256', enc);
-  return bytesToHex(hash) === OWNER_PASSWORD_SHA256;
+  const enc=new TextEncoder().encode(plain);
+  const hash=await crypto.subtle.digest('SHA-256',enc);
+  return bytesToHex(hash)===OWNER_PASSWORD_SHA256;
 }
-const b64encode = (bytes) => btoa(String.fromCharCode(...bytes));
-const b64decodeToBytes = (str) => Uint8Array.from(atob(str), c => c.charCodeAt(0));
+const b64e=bytes=>btoa(String.fromCharCode(...bytes));
+const b64d=str=>Uint8Array.from(atob(str),c=>c.charCodeAt(0));
 
-/* ===== GitHub API: читання/запис entries.json ===== */
-async function githubGetContents() {
-  const {owner,repo,path,branch} = CONFIG;
-  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
-  const res = await fetch(url, { headers: { 'Accept':'application/vnd.github+json' }});
-  if (res.status === 404) return { entries: [], sha: null };
-  if (!res.ok) throw new Error('Помилка читання GitHub: ' + res.status);
-  const data = await res.json();
-  const contentBytes = b64decodeToBytes(data.content.replace(/\n/g,''));
-  const text = new TextDecoder().decode(contentBytes);
-  let entries = [];
-  try { entries = JSON.parse(text); } catch { entries = []; }
-  if (!Array.isArray(entries)) entries = [];
-  return { entries, sha: data.sha };
+/* github api */
+async function githubGetContents(){
+  const{owner,repo,path,branch}=CONFIG;
+  const url=`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+  const res=await fetch(url,{headers:{'Accept':'application/vnd.github+json'}});
+  if(res.status===404)return{entries:[],sha:null};
+  const data=await res.json();
+  const text=new TextDecoder().decode(b64d(data.content.replace(/\n/g,'')));
+  let entries=[];try{entries=JSON.parse(text);}catch{}
+  return{entries,sha:data.sha};
 }
-
-async function githubPutContents(entries, prevSha, token, message) {
-  const {owner,repo,path,branch} = CONFIG;
-  const bodyStr = JSON.stringify(entries, null, 2);
-  const bodyB64 = b64encode(new TextEncoder().encode(bodyStr));
-  const payload = { message: message||'Update diary', content: bodyB64, branch, ...(prevSha?{sha:prevSha}:{}) };
-  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}`;
-  const res = await fetch(url, {
-    method:'PUT',
-    headers:{
+async function githubPutContents(entries,sha,token,message){
+  const{owner,repo,path,branch}=CONFIG;
+  const body=JSON.stringify(entries,null,2);
+  const payload={message,content:b64e(new TextEncoder().encode(body)),branch,...(sha?{sha}:{} )};
+  const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`,{
+    method:'PUT',headers:{
       'Accept':'application/vnd.github+json',
       'Authorization':`Bearer ${token}`,
       'Content-Type':'application/json'
-    },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error('Помилка запису GitHub: ' + res.status + ' ' + t);
-  }
-  return res.json();
+    },body:JSON.stringify(payload)});
+  if(!res.ok)throw new Error('Помилка запису: '+res.status);
 }
 
-/* ===== Рендер сторінки-«аркуша» ===== */
-function renderPage(entry, index){
-  const when = entry.createdAt ? new Date(entry.createdAt).toLocaleString() : '';
-  const page = document.createElement('article');
-  page.className = 'page';
-  page.innerHTML = `
-    <div class="page-head">
-      <div><strong>Дата:</strong> ${escapeHtml(when)}</div>
-      ${entry.tagline ? `<div><strong>Примітка:</strong> ${escapeHtml(entry.tagline)}</div>` : ``}
-    </div>
-    <h3 class="page-title">${escapeHtml(entry.title || 'Без назви')}</h3>
-    <div class="page-meta">№ ${String(index+1).padStart(3,'0')}</div>
-    <div class="page-text">${escapeHtml(entry.text || '')}</div>
+/* відмальовка */
+function renderPage(entry,index){
+  const page=document.createElement('div');page.className='page';
+  page.innerHTML=`
+    <div class="day">${escapeHtml(entry.day||'')}</div>
+    <div class="lesson">${entry.lessonNum||''}: ${escapeHtml(entry.title||'')}</div>
+    ${entry.text?`<div class="lesson">${escapeHtml(entry.text)}</div>`:''}
     <div class="page-num">Сторінка ${index+1}</div>
   `;
   return page;
 }
-
-/* ===== Оновити список сторінок ===== */
 async function refreshList(){
-  listEl.innerHTML = '';
+  listEl.innerHTML='';
   try{
-    const { entries } = await githubGetContents();
-    if (!entries.length){
-      const d = document.createElement('div');
-      d.className = 'panel';
-      d.textContent = 'Поки що немає записів.';
-      listEl.appendChild(d);
-      return;
-    }
-    entries.forEach((e, i) => listEl.appendChild(renderPage(e, i)));
-  }catch(err){
-    const d = document.createElement('div');
-    d.className = 'panel';
-    d.textContent = 'Не вдалося завантажити записи: ' + err.message;
-    listEl.appendChild(d);
+    const{entries}=await githubGetContents();
+    if(!entries.length){
+  // малюємо 5 пустих сторінок
+  for(let i=0;i<5;i++){
+    const page=document.createElement('div');
+    page.className='page';
+    page.innerHTML=`
+      <div class="day">&nbsp;</div>
+      <div class="lesson">&nbsp;</div>
+      <div class="lesson">&nbsp;</div>
+      <div class="lesson">&nbsp;</div>
+      <div class="page-num">Сторінка ${i+1}</div>
+    `;
+    listEl.appendChild(page);
   }
+  return;
+}
+    entries.forEach((e,i)=>listEl.appendChild(renderPage(e,i)));
+  }catch(err){listEl.innerHTML='<div class="panel">Помилка: '+err.message+'</div>';}
 }
 
-/* ===== Додати запис ===== */
-publishBtn.addEventListener('click', async ()=>{
-  if(!ownerUnlocked){ alert('Спочатку розблокуй власника.'); return; }
-  const title = titleEl.value.trim();
-  const text  = contentEl.value.trim();
-  const tag   = (taglineEl.value||'').trim();
-  if(!title || !text){ alert('Заповни заголовок і текст.'); return; }
-  const token = prompt('Встав свій GitHub token:');
-  if(!token){ alert('Токен не вказано.'); return; }
-
-  publishBtn.disabled = true;
+/* публікація */
+publishBtn.addEventListener('click',async()=>{
+  if(!ownerUnlocked){alert('Спочатку введи пароль.');return;}
+  const day=dayEl.value, title=titleEl.value.trim(), num=lessonNumEl.value.trim(), text=contentEl.value.trim();
+  if(!title||!num){alert('Заповни номер і назву уроку');return;}
+  const token=prompt('Введи свій GitHub token:');if(!token)return;
   try{
-    const { entries, sha } = await githubGetContents();
-    const entry = {
-      id: crypto.randomUUID(),
-      title, text, tagline: tag || null,
-      createdAt: new Date().toISOString()
-    };
-    const updated = [entry, ...entries];
-    await githubPutContents(updated, sha, token, `Add entry: ${title.slice(0,64)}`);
-    titleEl.value=''; taglineEl.value=''; contentEl.value='';
-    await refreshList();
-    alert('Запис додано у щоденник ✅');
-  }catch(e){
-    alert(e.message);
-  }finally{
-    publishBtn.disabled=false;
-  }
+    const{entries,sha}=await githubGetContents();
+    const entry={id:crypto.randomUUID(),day,lessonNum:num,title,text,createdAt:new Date().toISOString()};
+    await githubPutContents([entry,...entries],sha,token,`Add: ${day} ${num}`);
+    dayEl.selectedIndex=0;titleEl.value='';lessonNumEl.value='';contentEl.value='';
+    await refreshList();alert('Записано ✅');
+  }catch(e){alert(e.message);}
 });
+clearBtn.addEventListener('click',()=>{titleEl.value='';lessonNumEl.value='';contentEl.value='';});
+reloadBtn.addEventListener('click',refreshList);
 
-clearBtn.addEventListener('click', ()=>{ titleEl.value=''; taglineEl.value=''; contentEl.value=''; });
-reloadBtn.addEventListener('click', refreshList);
-
-/* стартова загрузка */
+/* старт */
 refreshList();
 </script>
 </body>
